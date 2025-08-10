@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Food Donation Predictor</title>
+  <style>
+    /* Global Styles */
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #e8f5e9, #d0f0c0);
+      padding: 30px;
+      margin: 0;
+      color: #2c3e50;
+    }
+
+    /* Title */
+    h1 {
+      text-align: center;
+      font-size: 32px;
+      color: #1b5e20;
+      margin-bottom: 30px;
+      letter-spacing: 1px;
+    }
+
+    /* Section Headings */
+    h2 {
+      color: #2e7d32;
+      margin-top: 30px;
+      font-size: 22px;
+      border-left: 6px solid #43a047;
+      padding-left: 12px;
+      font-weight: bold;
+    }
+
+    /* Container */
+    .container {
+      max-width: 700px;
+      margin: auto;
+      background: #ffffff;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0px 6px 18px rgba(0,0,0,0.15);
+      transition: transform 0.2s ease-in-out;
+    }
+    .container:hover {
+      transform: scale(1.01);
+    }
+
+    /* Inputs */
+    input, select {
+      width: 100%;
+      padding: 14px;
+      margin: 12px 0;
+      border: 1px solid #bbb;
+      border-radius: 8px;
+      font-size: 15px;
+      transition: all 0.3s;
+    }
+    input:focus, select:focus {
+      border-color: #2e7d32;
+      box-shadow: 0px 0px 6px rgba(46,125,50,0.4);
+      outline: none;
+    }
+
+    /* Buttons */
+    button {
+      background: linear-gradient(135deg, #43a047, #2e7d32);
+      color: white;
+      padding: 14px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 15px;
+      font-size: 16px;
+      font-weight: bold;
+      width: 100%;
+      transition: background 0.3s, transform 0.2s;
+    }
+    button:hover {
+      background: linear-gradient(135deg, #388e3c, #1b5e20);
+      transform: translateY(-2px);
+    }
+
+    /* Donation Items */
+    .donations-list {
+      margin-top: 20px;
+    }
+    .donation-item {
+      background: #f1f8e9;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 10px 0;
+      font-size: 15px;
+      color: #2e7d32;
+      border-left: 5px solid #43a047;
+      box-shadow: 0px 2px 6px rgba(0,0,0,0.1);
+    }
+
+    /* Links */
+    p a {
+      color: #2e7d32;
+      text-decoration: none;
+      font-weight: bold;
+      margin: 0 8px;
+      transition: color 0.3s;
+    }
+    p a:hover {
+      color: #1b5e20;
+      text-decoration: underline;
+    }
+
+    hr {
+      border: none;
+      border-top: 1px solid #ccc;
+      margin: 25px 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>Food Donation Predictor</h1>
+  <div class="container">
+    <!-- Registration & Login -->
+    <h2>User Authentication</h2>
+    <input type="text" id="username" placeholder="Username" required>
+    <input type="password" id="password" placeholder="Password" required>
+    <button onclick="register()">Register</button>
+    <button onclick="login()">Login</button>
+    <button onclick="logout()">Logout</button>
+
+    <hr>
+
+    <!-- Prediction -->
+    <h2>Predict Food Surplus</h2>
+    <button onclick="predictDonation()">Predict Donation Size</button>
+    <p id="predictionResult"></p>
+
+    <hr>
+
+    <!-- Donation Form -->
+    <h2>Submit a Donation</h2>
+    <form id="donationForm">
+      <input type="text" id="food_type" placeholder="Food Type (e.g. Rice)" required>
+      <input type="number" id="quantity" placeholder="Quantity" required>
+      <input type="number" id="expiry" placeholder="Expiry in hours" required>
+      <button type="submit">Submit Donation</button>
+    </form>
+    <p id="donationMessage"></p>
+
+    <hr>
+
+    <!-- Donations History -->
+    <h2>Recent Donations</h2>
+    <div id="donations" class="donations-list"></div>
+
+    <p>
+      <a href="my_donations.html">View My Donations</a> | 
+      <a href="ngo_dashboard.html">NGO Dashboard</a>
+    </p>
+  </div>
+
+  <script>
+    const API_URL = "http://127.0.0.1:5000";
+
+    async function register() {
+      const res = await fetch(`${API_URL}/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: document.getElementById("username").value,
+          password: document.getElementById("password").value
+        })
+      });
+      const data = await res.json();
+      alert(data.message || data.error);
+    }
+
+    async function login() {
+      const res = await fetch(`${API_URL}/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: document.getElementById("username").value,
+          password: document.getElementById("password").value
+        }),
+        credentials: "include"
+      });
+      const data = await res.json();
+      alert(data.message || data.error);
+    }
+
+    async function logout() {
+      const res = await fetch(`${API_URL}/logout`, {
+        method: "GET",
+        credentials: "include"
+      });
+      const data = await res.json();
+      alert(data.message);
+    }
+
+    async function predictDonation() {
+      const res = await fetch(`${API_URL}/predict`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          time_of_day: 12,
+          day_of_week: 3,
+          weather_code: 1,
+          event_type_code: 0
+        })
+      });
+      const data = await res.json();
+      document.getElementById("predictionResult").innerText =
+        data.predicted_donation_kg
+          ? `Predicted Donation Size: ${data.predicted_donation_kg} kg`
+          : `Error: ${data.error}`;
+    }
+
+    document.getElementById("donationForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const res = await fetch(`${API_URL}/submit_donation`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          food_type: document.getElementById("food_type").value,
+          quantity: parseInt(document.getElementById("quantity").value),
+          expiry: parseInt(document.getElementById("expiry").value)
+        })
+      });
+      const data = await res.json();
+      document.getElementById("donationMessage").innerText = data.message || data.error;
+      loadDonations();
+    });
+
+    async function loadDonations() {
+      const res = await fetch(`${API_URL}/donations`);
+      const data = await res.json();
+      const donationsDiv = document.getElementById("donations");
+      donationsDiv.innerHTML = "";
+      data.forEach(donation => {
+        const div = document.createElement("div");
+        div.className = "donation-item";
+        div.innerText = `${donation.email} donated ${donation.quantity} of ${donation.food_type} → ${donation.matched_ngo}`;
+        donationsDiv.appendChild(div);
+      });
+    }
+
+    loadDonations();
+  </script>
+</body>
+</html>

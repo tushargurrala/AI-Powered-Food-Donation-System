@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>My Donations</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f5f7fa;
+      color: #2c3e50;
+    }
+
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      margin-top: 30px;
+    }
+
+    h2 {
+      text-align: center;
+      font-weight: 700;
+      color: #2980b9;
+      margin-bottom: 20px;
+    }
+
+    h4 {
+      margin-top: 30px;
+      font-weight: 600;
+      color: #34495e;
+    }
+
+    .btn-danger {
+      float: right;
+    }
+
+    .alert {
+      font-size: 1.2rem;
+      text-align: center;
+      border-radius: 8px;
+    }
+
+    table {
+      margin-top: 20px;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    thead {
+      background-color: #2980b9;
+      color: white;
+    }
+
+    th {
+      text-align: center;
+      vertical-align: middle;
+    }
+
+    td {
+      text-align: center;
+      vertical-align: middle;
+    }
+
+    .urgent-row {
+      background-color: #fff8e6 !important; /* Light yellow for urgent */
+    }
+
+    .badge {
+      font-size: 0.9rem;
+      padding: 6px 12px;
+    }
+
+    iframe {
+      width: 100%;
+      border-radius: 8px;
+      margin-top: 15px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    }
+
+    /* Mobile responsiveness */
+    @media (max-width: 768px) {
+      .container {
+        padding: 20px;
+      }
+      h2 {
+        font-size: 1.6rem;
+      }
+    }
+  </style>
+</head>
+<body class="p-3">
+  <div class="container">
+    <button onclick="logout()" class="btn btn-danger mb-4">Logout</button>
+    <h2>My Donations</h2>
+
+    <!-- Total Donated Counter -->
+    <div class="alert alert-info shadow-sm">
+      <strong>Total Donated: <span id="totalKg">0</span> kg</strong>
+    </div>
+
+    <h4>Your Donation History</h4>
+    <div class="table-responsive">
+      <table class="table table-striped table-bordered align-middle shadow-sm" id="donationTable">
+        <thead>
+          <tr>
+            <th>Food Type</th>
+            <th>Quantity (kg)</th>
+            <th>Expiry</th>
+            <th>Status</th>
+            <th>Matched NGO</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <!-- Google Map -->
+    <h4>Your Pickup Location</h4>
+    <iframe
+      src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3806.744050763453!2d78.35632101487602!3d17.493272988015687!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bcb91a6b7c75f45%3A0xa70a7c85a9d6f3d9!2sMiyapur%2C%20Hyderabad%2C%20Telangana%2C%20India!5e0!3m2!1sen!2sin!4v1691310194820!5m2!1sen!2sin"
+      height="450"
+      allowfullscreen=""
+      loading="lazy">
+    </iframe>
+  </div>
+
+  <script>
+    async function loadDonations() {
+      try {
+        const res = await fetch("http://127.0.0.1:5000/donations");
+        const data = await res.json();
+        const tableBody = document.querySelector("#donationTable tbody");
+        let html = "";
+        let totalKg = 0;
+
+        data.forEach(entry => {
+          totalKg += entry.quantity;
+
+          // Expiry check
+          let status = "";
+          let rowClass = "";
+          try {
+            const expiryDate = new Date(entry.expiry);
+            const now = new Date();
+            const diffHours = (expiryDate - now) / (1000 * 60 * 60);
+
+            if (diffHours < 3) {
+              status = "<span class='badge bg-warning text-dark'>URGENT</span>";
+              rowClass = "urgent-row";
+            } else {
+              status = "<span class='badge bg-success'>OK</span>";
+            }
+          } catch {
+            status = "<span class='badge bg-secondary'>Unknown</span>";
+          }
+
+          html += `
+            <tr class="${rowClass}">
+              <td>${entry.food_type}</td>
+              <td>${entry.quantity}</td>
+              <td>${new Date(entry.expiry).toLocaleString()}</td>
+              <td>${status}</td>
+              <td>${entry.matched_ngo}</td>
+            </tr>
+          `;
+        });
+
+        tableBody.innerHTML = html;
+        document.getElementById("totalKg").innerText = totalKg;
+      } catch (err) {
+        console.error("Error loading donations:", err);
+      }
+    }
+
+    function logout() {
+      window.location.href = "index.html";
+    }
+
+    loadDonations();
+  </script>
+</body>
+</html>
